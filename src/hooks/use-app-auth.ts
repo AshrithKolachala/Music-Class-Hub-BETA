@@ -2,6 +2,22 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
 const AUTH_QUERY_KEY = ["auth", "me"];
 
+export function getToken() {
+  return localStorage.getItem("session_token");
+}
+
+export function apiFetch(path: string, options: RequestInit = {}) {
+  const token = getToken();
+  return fetch(path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { "x-session-token": token } : {}),
+      ...options.headers,
+    },
+  });
+}
+
 type UserInfo = {
   role: "teacher" | "student";
   userId: string;
@@ -9,16 +25,12 @@ type UserInfo = {
   studentId: number | null;
 };
 
-// Mock credentials - only these can login
-const VALID_CREDENTIALS: Record<string, { password: string; role: "teacher" | "student"; name: string }> = {
-  "TEACHER-001": { password: "password123", role: "teacher", name: "Dr. Sharma" },
-  "STU-001": { password: "password123", role: "student", name: "Arjun" },
-  "STU-002": { password: "password123", role: "student", name: "Priya" },
-};
-
 async function fetchCurrentUser(): Promise<UserInfo | null> {
-  const stored = localStorage.getItem("auth_user");
-  return stored ? JSON.parse(stored) : null;
+  const token = getToken();
+  if (!token) return null;
+  const res = await apiFetch("/api/auth/me");
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export function useAppAuth() {
@@ -33,18 +45,17 @@ export function useAppAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (body: { userId: string; password: string; role: "teacher" | "student" }) => {
-      const cred = VALID_CREDENTIALS[body.userId];
-      if (!cred || cred.password !== body.password || cred.role !== body.role) {
-        throw new Error("Invalid credentials");
+      const res = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ error: "Login failed" }));
+        throw new Error(error.error || "Login failed");
       }
-      const userData: UserInfo = {
-        userId: body.userId,
-        role: body.role,
-        name: cred.name,
-        studentId: body.role === "student" ? parseInt(body.userId.split("-")[1]) : null,
-      };
-      localStorage.setItem("auth_user", JSON.stringify(userData));
-      return { ...userData, success: true };
+      const data = await res.json();
+      localStorage.setItem("session_token", data.token);
+      return data as UserInfo;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, data);
@@ -53,7 +64,8 @@ export function useAppAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      localStorage.removeItem("auth_user");
+      await apiFetch("/api/auth/logout", { method: "POST" });
+      localStorage.removeItem("session_token");
     },
     onSuccess: () => {
       queryClient.setQueryData(AUTH_QUERY_KEY, null);

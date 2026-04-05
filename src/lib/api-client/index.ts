@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiFetch } from '@/hooks/use-app-auth';
 
 export type ClassStatus = 'scheduled' | 'ongoing' | 'completed';
 
@@ -22,41 +23,32 @@ export interface Announcement {
 }
 
 export interface Student {
-  id: string;
+  id: number;
   name: string;
-  email: string;
+  userId: string;
+  createdAt: string;
 }
 
-// Query Keys
 export const getListClassesQueryKey = () => ['classes'];
 export const getListAnnouncementsQueryKey = () => ['announcements'];
 export const getListStudentsQueryKey = () => ['students'];
 
-// Hooks - with mock/stub implementations
 export function useListClasses() {
   return useQuery({
     queryKey: getListClassesQueryKey(),
     queryFn: async () => {
-      try {
-        const res = await fetch('/api/classes');
-        if (!res.ok) return [];
-        return res.json();
-      } catch {
-        return [];
-      }
+      const res = await apiFetch('/api/classes');
+      if (!res.ok) return [];
+      return res.json();
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
 }
 
 export function useCreateClass(options?: any) {
   return useMutation({
     mutationFn: async (data: Partial<Class>) => {
-      const res = await fetch('/api/classes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const res = await apiFetch('/api/classes', { method: 'POST', body: JSON.stringify(data) });
       if (!res.ok) throw new Error('Failed to create class');
       return res.json();
     },
@@ -67,11 +59,7 @@ export function useCreateClass(options?: any) {
 export function useUpdateClass(options?: any) {
   return useMutation({
     mutationFn: async ({ classId, data }: { classId: number; data: Partial<Class> }) => {
-      const res = await fetch(`/api/classes/${classId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const res = await apiFetch(`/api/classes/${classId}`, { method: 'PUT', body: JSON.stringify(data) });
       if (!res.ok) throw new Error('Failed to update class');
       return res.json();
     },
@@ -82,7 +70,7 @@ export function useUpdateClass(options?: any) {
 export function useDeleteClass(options?: any) {
   return useMutation({
     mutationFn: async (classId: number) => {
-      const res = await fetch(`/api/classes/${classId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/classes/${classId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete class');
     },
     ...options?.mutation,
@@ -93,26 +81,18 @@ export function useListAnnouncements() {
   return useQuery({
     queryKey: getListAnnouncementsQueryKey(),
     queryFn: async () => {
-      try {
-        const res = await fetch('/api/announcements');
-        if (!res.ok) return [];
-        return res.json();
-      } catch {
-        return [];
-      }
+      const res = await apiFetch('/api/announcements');
+      if (!res.ok) return [];
+      return res.json();
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
 }
 
 export function useCreateAnnouncement(options?: any) {
   return useMutation({
     mutationFn: async (data: Partial<Announcement>) => {
-      const res = await fetch('/api/announcements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const res = await apiFetch('/api/announcements', { method: 'POST', body: JSON.stringify(data) });
       if (!res.ok) throw new Error('Failed to create announcement');
       return res.json();
     },
@@ -123,7 +103,7 @@ export function useCreateAnnouncement(options?: any) {
 export function useDeleteAnnouncement(options?: any) {
   return useMutation({
     mutationFn: async (announcementId: number) => {
-      const res = await fetch(`/api/announcements/${announcementId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/announcements/${announcementId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete announcement');
     },
     ...options?.mutation,
@@ -134,27 +114,22 @@ export function useListStudents() {
   return useQuery({
     queryKey: getListStudentsQueryKey(),
     queryFn: async () => {
-      try {
-        const res = await fetch('/api/students');
-        if (!res.ok) return [];
-        return res.json();
-      } catch {
-        return [];
-      }
+      const res = await apiFetch('/api/students');
+      if (!res.ok) return [];
+      return res.json();
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60,
   });
 }
 
 export function useCreateStudent(options?: any) {
   return useMutation({
-    mutationFn: async (data: Partial<Student>) => {
-      const res = await fetch('/api/students', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to create student');
+    mutationFn: async (data: { name: string; userId: string; password: string }) => {
+      const res = await apiFetch('/api/students', { method: 'POST', body: JSON.stringify(data) });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to create student' }));
+        throw new Error(err.error || 'Failed to create student');
+      }
       return res.json();
     },
     ...options?.mutation,
@@ -163,8 +138,8 @@ export function useCreateStudent(options?: any) {
 
 export function useDeleteStudent(options?: any) {
   return useMutation({
-    mutationFn: async (studentId: string) => {
-      const res = await fetch(`/api/students/${studentId}`, { method: 'DELETE' });
+    mutationFn: async (studentId: number) => {
+      const res = await apiFetch(`/api/students/${studentId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete student');
     },
     ...options?.mutation,

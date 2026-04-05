@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "id": "TEACHER-001",
+      "password": "password123",
+      "role": "teacher",
+      "name": "Dr. Sharma",
+      "studentId": null
+    }
+  ],
+  "students": [],
+  "classes": [],
+  "announcements": []
+}

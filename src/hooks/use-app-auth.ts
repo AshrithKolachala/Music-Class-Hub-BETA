@@ -33,11 +33,15 @@ export function useAppAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (body: { userId: string; password: string; role: "teacher" | "student" }) => {
+      const cred = VALID_CREDENTIALS[body.userId];
+      if (!cred || cred.password !== body.password || cred.role !== body.role) {
+        throw new Error("Invalid credentials");
+      }
       const userData: UserInfo = {
         userId: body.userId,
         role: body.role,
-        name: body.role === "teacher" ? "Demo Teacher" : "Demo Student",
-        studentId: body.role === "student" ? 1 : null,
+        name: cred.name,
+        studentId: body.role === "student" ? parseInt(body.userId.split("-")[1]) : null,
       };
       localStorage.setItem("auth_user", JSON.stringify(userData));
       return { ...userData, success: true };

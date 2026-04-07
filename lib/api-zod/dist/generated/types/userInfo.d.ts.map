@@ -1,1 +1,0 @@
-{"version":3,"file":"userInfo.d.ts","sourceRoot":"","sources":["../../../src/generated/types/userInfo.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,gBAAgB,CAAC;AAEnD,MAAM,WAAW,QAAQ;IACvB,IAAI,EAAE,YAAY,CAAC;IACnB,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,MAAM,CAAC;IACb,SAAS,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CAC3B"}

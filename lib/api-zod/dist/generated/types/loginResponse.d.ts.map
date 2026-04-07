@@ -1,1 +1,0 @@
-{"version":3,"file":"loginResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/types/loginResponse.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,qBAAqB,CAAC;AAE7D,MAAM,WAAW,aAAa;IAC5B,OAAO,EAAE,OAAO,CAAC;IACjB,IAAI,EAAE,iBAAiB,CAAC;IACxB,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,MAAM,CAAC;IACb,SAAS,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;CAC3B"}

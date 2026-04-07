@@ -1,11 +1,3 @@
 modules = ["nodejs-20"]
 [agent]
 expertMode = true
-
-[[ports]]
-localPort = 4001
-externalPort = 80
-
-[[ports]]
-localPort = 18900
-externalPort = 3000

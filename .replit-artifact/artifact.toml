@@ -15,16 +15,15 @@ name = "web"
 paths = ["/"]
 
 [services.development]
-run = "bash start.sh"
+run = "pnpm --filter @workspace/music-school run dev"
 
 [services.env]
 PORT = "18900"
 BASE_PATH = "/"
-API_PORT = "4001"
 
 [services.production]
-build = ["bash", "-c", "BASE_PATH=/ npm run build"]
-publicDir = "dist"
+build = ["pnpm", "--filter", "@workspace/music-school", "run", "build"]
+publicDir = "artifacts/music-school/dist/public"
 serve = "static"
 
 [[services.production.rewrites]]

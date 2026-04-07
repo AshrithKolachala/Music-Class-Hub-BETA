@@ -1,10 +1,10 @@
 {
   "users": [
     {
-      "id": "TEACHER-001",
-      "password": "password123",
+      "id": "UshaVangara181011",
+      "password": "SaiAshrithRam",
       "role": "teacher",
-      "name": "Dr. Sharma",
+      "name": "Usha Vangara",
       "studentId": null
     }
   ],

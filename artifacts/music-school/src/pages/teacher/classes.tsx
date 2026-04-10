@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Link } from "wouter";
 import { ClassStatus } from "@workspace/api-client-react";
 
+const BASE = import.meta.env.BASE_URL;
+
+type Student = { id: number; studentId: string; name: string; instrument: string };
+
 const classSchema = z.object({
   title: z.string().min(1, "Title is required"),
   topic: z.string().min(1, "Topic is required"),
@@ -30,7 +34,15 @@ export default function TeacherClasses() {
   const { classes, createClass, deleteClass, updateClass } = useAppClasses();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("all");
+  const [recurringType, setRecurringType] = useState<string>("none");
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetch(`${BASE}api/students`, { credentials: "include" })
+      .then(r => r.json()).then(setStudents).catch(() => {});
+  }, []);
 
   const form = useForm<z.infer<typeof classSchema>>({
     resolver: zodResolver(classSchema),
@@ -40,23 +52,30 @@ export default function TeacherClasses() {
   const onSubmit = async (data: z.infer<typeof classSchema>) => {
     try {
       const isoDate = new Date(data.scheduledAt).toISOString();
+      const payload = {
+        ...data,
+        scheduledAt: isoDate,
+        studentId: selectedStudentId && selectedStudentId !== "all" ? parseInt(selectedStudentId) : null,
+        recurringType,
+      };
       if (editingId) {
-        await updateClass({ classId: editingId, data: { ...data, scheduledAt: isoDate } });
+        await updateClass({ classId: editingId, data: payload as any });
         toast({ title: "Class updated successfully" });
       } else {
-        await createClass({ data: { ...data, scheduledAt: isoDate } });
+        await createClass({ data: payload as any });
         toast({ title: "Class scheduled successfully" });
       }
       setIsDialogOpen(false);
       form.reset();
       setEditingId(null);
+      setSelectedStudentId("all");
+      setRecurringType("none");
     } catch (error) {
       toast({ title: "Error saving class", variant: "destructive" });
     }
   };
 
   const handleEdit = (c: any) => {
-    // format to datetime-local expected format: YYYY-MM-DDTHH:mm
     const dateStr = new Date(c.scheduledAt).toISOString().slice(0, 16);
     form.reset({
       title: c.title,
@@ -65,6 +84,8 @@ export default function TeacherClasses() {
       durationMinutes: c.durationMinutes,
       description: c.description || ""
     });
+    setSelectedStudentId(c.studentId ? String(c.studentId) : "all");
+    setRecurringType(c.recurringType || "none");
     setEditingId(c.id);
     setIsDialogOpen(true);
   };
@@ -72,6 +93,12 @@ export default function TeacherClasses() {
   const handleStatusChange = async (id: number, status: ClassStatus) => {
     await updateClass({ classId: id, data: { status } });
     toast({ title: `Status updated to ${status}` });
+  };
+
+  const getStudentName = (studentId: number | null) => {
+    if (!studentId) return null;
+    const s = students.find(s => s.id === studentId);
+    return s ? s.name : null;
   };
 
   return (
@@ -87,6 +114,8 @@ export default function TeacherClasses() {
           if (!open) {
             form.reset();
             setEditingId(null);
+            setSelectedStudentId("all");
+            setRecurringType("none");
           }
         }}>
           <DialogTrigger asChild>
@@ -94,7 +123,7 @@ export default function TeacherClasses() {
               <Plus className="w-4 h-4" /> Schedule Class
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[520px]">
             <DialogHeader>
               <DialogTitle>{editingId ? "Edit Class" : "Schedule New Class"}</DialogTitle>
             </DialogHeader>
@@ -104,6 +133,23 @@ export default function TeacherClasses() {
                 <Input placeholder="e.g. Advanced Piano Masterclass" {...form.register("title")} />
                 {form.formState.errors.title && <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>}
               </div>
+
+              <div className="space-y-2">
+                <Label>For Student (optional — leave blank for all)</Label>
+                <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All students" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Students</SelectItem>
+                    {students.map(s => (
+                      <SelectItem key={s.id} value={String(s.id)}>{s.name} ({s.studentId})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">If a student is selected, only they will see this class.</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Date & Time</Label>
@@ -114,6 +160,23 @@ export default function TeacherClasses() {
                   <Input type="number" {...form.register("durationMinutes")} />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label>Recurring</Label>
+                <Select value={recurringType} onValueChange={setRecurringType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Does not repeat</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Every 2 weeks</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>Instrument / Topic</Label>
                 <Input placeholder="e.g. Piano - Jazz Improvisation" {...form.register("topic")} />
@@ -144,7 +207,6 @@ export default function TeacherClasses() {
               {c.status === 'completed' && <div className="absolute top-0 left-0 w-1 h-full bg-green-500" />}
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row md:items-center p-6 gap-6">
-                  {/* Time Box */}
                   <div className="flex flex-row md:flex-col items-center md:items-start gap-3 md:gap-0 min-w-[120px]">
                     <div className="text-sm font-medium text-primary">
                       {format(new Date(c.scheduledAt), "MMM d, yyyy")}
@@ -157,17 +219,26 @@ export default function TeacherClasses() {
                     </div>
                   </div>
 
-                  {/* Divider hidden on mobile */}
                   <div className="hidden md:block w-px h-16 bg-border/50 mx-2" />
 
-                  {/* Info */}
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-foreground">{c.title}</h3>
                     <p className="text-sm text-muted-foreground font-medium mt-1">{c.topic}</p>
                     {c.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-1">{c.description}</p>}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      {(c as any).studentId && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          {getStudentName((c as any).studentId) || "Student only"}
+                        </span>
+                      )}
+                      {(c as any).recurringType && (c as any).recurringType !== "none" && (
+                        <span className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded-full capitalize">
+                          {(c as any).recurringType}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                     <div className="mr-auto md:mr-4">
                       <Select 

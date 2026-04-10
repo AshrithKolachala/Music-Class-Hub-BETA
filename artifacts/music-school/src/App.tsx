@@ -10,9 +10,13 @@ import TeacherDashboard from "@/pages/teacher/dashboard";
 import TeacherClasses from "@/pages/teacher/classes";
 import TeacherStudents from "@/pages/teacher/students";
 import TeacherAnnouncements from "@/pages/teacher/announcements";
+import TeacherClassLogs from "@/pages/teacher/class-logs";
+import TeacherUpdates from "@/pages/teacher/updates";
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentClasses from "@/pages/student/classes";
 import StudentAccount from "@/pages/student/account";
+import StudentClassLogs from "@/pages/student/class-logs";
+import StudentUpdates from "@/pages/student/updates";
 import Call from "@/pages/shared/call";
 
 import { useAppAuth } from "@/hooks/use-app-auth";
@@ -79,6 +83,12 @@ function Router() {
       <Route path="/teacher/announcements">
         <ProtectedRoute component={TeacherAnnouncements} allowedRole="teacher" />
       </Route>
+      <Route path="/teacher/class-logs">
+        <ProtectedRoute component={TeacherClassLogs} allowedRole="teacher" />
+      </Route>
+      <Route path="/teacher/updates">
+        <ProtectedRoute component={TeacherUpdates} allowedRole="teacher" />
+      </Route>
 
       {/* Student Routes */}
       <Route path="/student">
@@ -91,7 +101,13 @@ function Router() {
         <ProtectedRoute component={StudentAccount} allowedRole="student" />
       </Route>
       <Route path="/student/announcements">
-        <ProtectedRoute component={TeacherAnnouncements} /> {/* Reuse UI but logic restricts actions via API */}
+        <ProtectedRoute component={TeacherAnnouncements} />
+      </Route>
+      <Route path="/student/class-logs">
+        <ProtectedRoute component={StudentClassLogs} allowedRole="student" />
+      </Route>
+      <Route path="/student/updates">
+        <ProtectedRoute component={StudentUpdates} allowedRole="student" />
       </Route>
 
       {/* Shared Routes */}

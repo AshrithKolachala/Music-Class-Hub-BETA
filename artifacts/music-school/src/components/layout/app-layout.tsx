@@ -7,8 +7,9 @@ import {
   CalendarDays, 
   Bell, 
   LogOut,
-  Video,
-  KeyRound
+  KeyRound,
+  ClipboardList,
+  Megaphone
 } from "lucide-react";
 import { useAppAuth } from "@/hooks/use-app-auth";
 import { Button } from "@/components/ui/button";
@@ -29,10 +30,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     { name: "Dashboard", href: basePath, icon: LayoutDashboard },
     { name: "My Students", href: `${basePath}/students`, icon: Users },
     { name: "Schedule", href: `${basePath}/classes`, icon: CalendarDays },
+    { name: "Class Logs", href: `${basePath}/class-logs`, icon: ClipboardList },
+    { name: "Updates", href: `${basePath}/updates`, icon: Megaphone },
     { name: "Announcements", href: `${basePath}/announcements`, icon: Bell },
   ] : [
     { name: "Dashboard", href: basePath, icon: LayoutDashboard },
     { name: "My Classes", href: `${basePath}/classes`, icon: CalendarDays },
+    { name: "Class Logs", href: `${basePath}/class-logs`, icon: ClipboardList },
+    { name: "Updates", href: `${basePath}/updates`, icon: Megaphone },
     { name: "Announcements", href: `${basePath}/announcements`, icon: Bell },
     { name: "My Account", href: `${basePath}/account`, icon: KeyRound },
   ];
@@ -42,16 +47,16 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-card border-r border-border/50 flex flex-col shrink-0 relative z-20">
         <div className="p-6 pb-2">
-          <h1 className="text-2xl font-display font-bold text-primary flex items-center gap-2">
-            <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50">
-              <span className="text-primary text-sm">M</span>
+          <h1 className="text-xl font-display font-bold text-primary flex items-center gap-2">
+            <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/50 shrink-0">
+              <span className="text-primary text-sm">S</span>
             </span>
-            Maestro
+            Sangeetavarshini
           </h1>
           <p className="text-xs text-muted-foreground mt-1 tracking-wide uppercase">Music Academy</p>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        <nav className="flex-1 px-4 py-6 space-y-1">
           {navItems.map((item) => {
             const isActive = location === item.href || (location.startsWith(item.href) && item.href !== basePath);
             return (
@@ -71,7 +76,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     />
                   )}
                   <item.icon className={cn("w-5 h-5 relative z-10 transition-colors", isActive ? "text-primary" : "group-hover:text-primary")} />
-                  <span className="relative z-10">{item.name}</span>
+                  <span className="relative z-10 text-sm">{item.name}</span>
                 </div>
               </Link>
             );
@@ -96,7 +101,6 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 max-w-[100vw] overflow-x-hidden relative">
-        {/* Subtle background glow effect */}
         <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-primary/5 to-transparent pointer-events-none -z-10" />
         
         <div className="p-6 md:p-8 lg:p-10 max-w-6xl mx-auto min-h-[calc(100vh-2rem)]">

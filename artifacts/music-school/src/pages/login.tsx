@@ -72,7 +72,7 @@ export default function Login() {
               <Music className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-3">
-              Maestro Academy
+              Sangeetavarshini
             </h1>
             <p className="text-muted-foreground text-lg">
               Elevate your musical journey

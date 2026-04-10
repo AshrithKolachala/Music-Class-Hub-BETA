@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { registerPushNotifications } from "@/hooks/use-push-notifications";
 
 const AUTH_QUERY_KEY = ["auth", "me"];
 
@@ -41,6 +42,7 @@ export function useAppAuth() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(AUTH_QUERY_KEY, data);
+      registerPushNotifications().catch(() => {});
     },
   });
 

@@ -34,7 +34,7 @@ export default function TeacherUpdates() {
     if (res.ok) setUpdates(await res.json());
   };
 
-  useEffect(() => { fetch(`${BASE}api/students`, { credentials: "include" }).then(r => r.json()).then(setStudents).catch(() => {}); }, []);
+  useEffect(() => { fetch(`${BASE}api/students`, { credentials: "include" }).then(r => r.json()).then(d => setStudents(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
   useEffect(() => { fetchUpdates(); }, [filterStudentId]);
 
   const onSubmit = async (data: any) => {

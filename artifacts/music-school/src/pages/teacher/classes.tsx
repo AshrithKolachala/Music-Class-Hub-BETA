@@ -41,7 +41,7 @@ export default function TeacherClasses() {
 
   useEffect(() => {
     fetch(`${BASE}api/students`, { credentials: "include" })
-      .then(r => r.json()).then(setStudents).catch(() => {});
+      .then(r => r.json()).then(d => setStudents(Array.isArray(d) ? d : [])).catch(() => {});
   }, []);
 
   const form = useForm<z.infer<typeof classSchema>>({

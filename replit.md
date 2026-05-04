@@ -2,7 +2,7 @@
 
 ## Overview
 
-Music Teaching Platform (Maestro Academy) — A full-stack web application for online music lessons with separate teacher and student dashboards, class scheduling, announcements, and video calls via Jitsi Meet.
+Music Teaching Platform — **Sangeetavarshini** — A full-stack web application for online music lessons with separate teacher and student dashboards, class scheduling, class logs, per-student updates, announcements, push notifications, and video calls via Jitsi Meet.
 
 ## Stack
 
@@ -29,17 +29,19 @@ Music Teaching Platform (Maestro Academy) — A full-stack web application for o
 ## Features
 
 - Dual login (Teacher / Student)
-- Teacher dashboard: student management, class scheduling, announcements
-- Student dashboard: view classes, announcements, join video calls
-- Video calls via Jitsi Meet (high-quality audio)
+- Teacher dashboard: student management, class scheduling with student selector and recurring options, class logs, per-student updates, announcements
+- Student dashboard: view classes, class logs, updates, announcements, join video calls
+- Video calls via Jitsi Meet
+- Push notifications: VAPID-based web push, scheduler fires at 60/30/15/5 min before class
+- Service worker registered at `public/sw.js`
 
 ## Structure
 
 ```text
 artifacts-monorepo/
 ├── artifacts/
-│   ├── api-server/         # Express API server
-│   └── music-school/       # React + Vite frontend
+│   ├── api-server/         # Express API server (port 3001 in dev)
+│   └── music-school/       # React + Vite frontend (port 18900 in dev)
 ├── lib/
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
@@ -47,11 +49,22 @@ artifacts-monorepo/
 │   └── db/                 # Drizzle ORM schema + DB connection
 ```
 
+## Dev Startup Architecture
+
+The Replit workflow port monitor cannot detect the API server's port when run as a standalone workflow (platform limitation). As a workaround, the API server (`dist/index.cjs`, pre-built) starts as a **background process** inside the music-school's `dev` script on port 3001. Vite proxies `/api` requests to `http://localhost:3001`.
+
+- **Only one workflow needed**: `artifacts/music-school: web`
+- The `artifacts/api-server: API Server` artifact workflow is expected to show as "failed" — the API is running via the music-school workflow instead
+- After any API server code changes: run `pnpm --filter @workspace/api-server run build` to rebuild `dist/index.cjs`, then restart the music-school workflow
+
 ## DB Schema
 
 - `students` — student records with auto-generated IDs
-- `classes` — scheduled classes with status, topic, meeting link
+- `classes` — scheduled classes with status, topic, meeting link, student_id, recurring
+- `class_logs` — per-class log entries from teacher
+- `student_updates` — per-student update notes from teacher
 - `announcements` — pinned/regular announcements from teacher
+- `push_subscriptions` — web push endpoint + keys per user
 
 ## API Routes
 
@@ -64,3 +77,7 @@ artifacts-monorepo/
 - `PUT/DELETE /api/classes/:id` — update/delete class (teacher only)
 - `GET/POST /api/announcements` — list/create announcements
 - `DELETE /api/announcements/:id` — delete announcement (teacher only)
+- `GET/POST /api/class-logs` — class log entries
+- `GET/POST /api/updates` — per-student update notes
+- `POST /api/push/subscribe` — register push subscription
+- `GET /api/push/vapid-public-key` — get VAPID public key

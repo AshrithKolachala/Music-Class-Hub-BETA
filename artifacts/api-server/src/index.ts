@@ -1,19 +1,27 @@
 import app from "./app";
 
-const rawPort = process.env["PORT"];
+console.log(`[startup] PORT env = ${process.env["PORT"]}`);
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
+const port = Number(process.env["PORT"] ?? 3001);
 
 if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
+  throw new Error(`Invalid PORT value: "${process.env["PORT"]}"`);
 }
 
-app.listen(port, () => {
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
+const server = app.listen(port, "0.0.0.0", () => {
   console.log(`Server listening on port ${port}`);
+});
+
+server.on("error", (err) => {
+  console.error("Server error:", err);
+  process.exit(1);
 });

@@ -12,38 +12,52 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function registerPushNotifications() {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-
-  try {
-    const reg = await navigator.serviceWorker.register(`${BASE}sw.js`);
-    await navigator.serviceWorker.ready;
-
-    const existing = await reg.pushManager.getSubscription();
-    if (existing) {
-      await saveSub(existing);
-      return;
-    }
-
-    const res = await fetch(`${BASE}api/push/vapid-public-key`, { credentials: "include" });
-    const { publicKey } = await res.json();
-
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-
-    await saveSub(sub);
-  } catch (err) {
-    console.error("Push registration failed:", err);
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    throw new Error("Push notifications are not supported in this browser.");
   }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error("Notification permission was not granted.");
+  }
+
+  const reg = await navigator.serviceWorker.register(`${BASE}sw.js`);
+  await navigator.serviceWorker.ready;
+
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) {
+    await saveSub(existing);
+    return;
+  }
+
+  const res = await fetch(`${BASE}api/push/vapid-public-key`, { credentials: "include" });
+  if (!res.ok) {
+    throw new Error("Could not load push key from server.");
+  }
+
+  const { publicKey } = await res.json();
+  if (!publicKey) {
+    throw new Error("Push key is missing from server response.");
+  }
+
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey),
+  });
+
+  await saveSub(sub);
 }
 
 async function saveSub(sub: PushSubscription) {
-  const BASE = import.meta.env.BASE_URL;
-  await fetch(`${BASE}api/push/subscribe`, {
+  const res = await fetch(`${BASE}api/push/subscribe`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subscription: sub.toJSON() }),
   });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.error || "Could not save push subscription.");
+  }
 }

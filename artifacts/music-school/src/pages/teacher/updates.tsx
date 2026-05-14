@@ -11,11 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-
-const BASE = import.meta.env.BASE_URL;
-
-type Student = { id: number; studentId: string; name: string; instrument: string };
-type Update = { id: number; studentId: number; studentName: string; title: string; content: string; createdAt: string };
+import { getUpdates, createUpdate, deleteUpdate, type Update } from "@/lib/db/updates";
+import { getStudents, type Student } from "@/lib/db/students";
 
 export default function TeacherUpdates() {
   const [updates, setUpdates] = useState<Update[]>([]);
@@ -27,37 +24,37 @@ export default function TeacherUpdates() {
   const form = useForm({ defaultValues: { title: "", content: "" } });
 
   const fetchUpdates = async () => {
-    const url = filterStudentId && filterStudentId !== "all"
-      ? `${BASE}api/updates?studentId=${filterStudentId}`
-      : `${BASE}api/updates`;
-    const res = await fetch(url, { credentials: "include" });
-    if (res.ok) setUpdates(await res.json());
+    const data = await getUpdates(filterStudentId !== "all" ? filterStudentId : undefined);
+    setUpdates(data);
   };
 
-  useEffect(() => { fetch(`${BASE}api/students`, { credentials: "include" }).then(r => r.json()).then(d => setStudents(Array.isArray(d) ? d : [])).catch(() => {}); }, []);
+  useEffect(() => { getStudents().then(d => setStudents(d)).catch(() => {}); }, []);
   useEffect(() => { fetchUpdates(); }, [filterStudentId]);
 
   const onSubmit = async (data: any) => {
     if (!selectedStudentId) { toast({ title: "Please select a student", variant: "destructive" }); return; }
-    const res = await fetch(`${BASE}api/updates`, {
-      method: "POST", credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, studentId: selectedStudentId }),
-    });
-    if (res.ok) {
+    const student = students.find(s => s.id === selectedStudentId);
+    if (!student) return;
+    try {
+      await createUpdate({
+        studentId: selectedStudentId,
+        studentName: student.name,
+        title: data.title,
+        content: data.content,
+      });
       toast({ title: "Update sent" });
       setIsOpen(false);
       form.reset();
       setSelectedStudentId("");
       fetchUpdates();
-    } else {
+    } catch {
       toast({ title: "Error sending update", variant: "destructive" });
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Delete this update?")) return;
-    await fetch(`${BASE}api/updates/${id}`, { method: "DELETE", credentials: "include" });
+    await deleteUpdate(id);
     fetchUpdates();
   };
 
@@ -81,7 +78,7 @@ export default function TeacherUpdates() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Students</SelectItem>
-            {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+            {students.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -93,7 +90,7 @@ export default function TeacherUpdates() {
             <p className="text-lg font-medium">No updates sent yet</p>
           </div>
         ) : (
-          [...updates].reverse().map(u => (
+          updates.map(u => (
             <Card key={u.id} className="bg-card border-border/50 hover:border-primary/20 transition-colors">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -128,7 +125,7 @@ export default function TeacherUpdates() {
                   <SelectValue placeholder="Select student..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name} ({s.studentId})</SelectItem>)}
+                  {students.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.studentId})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

@@ -27,7 +27,7 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 function StudentCard({ student, onDelete, onPasswordChange }: {
   student: any;
   onDelete: () => void;
-  onPasswordChange: (studentId: number, newPassword: string) => Promise<void>;
+  onPasswordChange: (studentId: string, newPassword: string) => Promise<void>;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);

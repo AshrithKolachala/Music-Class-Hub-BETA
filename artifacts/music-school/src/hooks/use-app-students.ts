@@ -1,42 +1,39 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
-  useListStudents,
-  useCreateStudent,
-  useDeleteStudent,
-  getListStudentsQueryKey
-} from "@workspace/api-client-react";
+  getStudents,
+  createStudent,
+  deleteStudent,
+  changeStudentPassword,
+  type Student,
+} from "@/lib/db/students";
+
+const STUDENTS_KEY = ["students"];
 
 export function useAppStudents() {
   const queryClient = useQueryClient();
-  const queryKey = getListStudentsQueryKey();
 
-  const { data: students = [], isLoading } = useListStudents();
-
-  const createMutation = useCreateStudent({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const { data: students = [], isLoading } = useQuery<Student[]>({
+    queryKey: STUDENTS_KEY,
+    queryFn: getStudents,
   });
 
-  const deleteMutation = useDeleteStudent({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const createMutation = useMutation({
+    mutationFn: async ({ data }: { data: { name: string; instrument: string } }) => {
+      return createStudent(data.name, data.instrument);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: STUDENTS_KEY }),
   });
 
-  const changeStudentPassword = async (studentId: number, newPassword: string) => {
-    const res = await fetch(`/api/students/${studentId}/password`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ newPassword }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: "Failed to update password" }));
-      throw new Error(err.error || "Failed to update password");
-    }
-    await queryClient.invalidateQueries({ queryKey });
-    return res.json();
+  const deleteMutation = useMutation({
+    mutationFn: async ({ studentId }: { studentId: string }) => {
+      return deleteStudent(studentId);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: STUDENTS_KEY }),
+  });
+
+  const changePassword = async (studentId: string, newPassword: string) => {
+    await changeStudentPassword(studentId, newPassword);
+    await queryClient.invalidateQueries({ queryKey: STUDENTS_KEY });
   };
 
   return {
@@ -46,6 +43,6 @@ export function useAppStudents() {
     isCreating: createMutation.isPending,
     deleteStudent: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
-    changeStudentPassword,
+    changeStudentPassword: changePassword,
   };
 }

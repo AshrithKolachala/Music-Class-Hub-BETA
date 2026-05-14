@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { changeOwnPassword } from "@/lib/db/auth";
 
 const passwordSchema = z.object({
   newPassword: z.string().min(4, "Password must be at least 4 characters"),
@@ -35,20 +36,14 @@ export default function StudentAccount() {
 
   const onSubmit = async (data: PasswordFormValues) => {
     if (!user?.studentId) return;
-    const res = await fetch(`/api/students/${user.studentId}/password`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ newPassword: data.newPassword }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: "Failed" }));
-      toast({ title: "Error", description: err.error, variant: "destructive" });
-      return;
+    try {
+      await changeOwnPassword(user.studentId, data.newPassword);
+      toast({ title: "Password changed successfully!" });
+      setChanged(true);
+      form.reset();
+    } catch {
+      toast({ title: "Error", description: "Failed to update password", variant: "destructive" });
     }
-    toast({ title: "Password changed successfully!" });
-    setChanged(true);
-    form.reset();
   };
 
   return (

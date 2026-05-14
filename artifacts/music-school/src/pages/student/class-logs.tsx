@@ -2,21 +2,18 @@ import { useState, useEffect } from "react";
 import { ClipboardList } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent } from "@/components/ui/card";
-
-const BASE = import.meta.env.BASE_URL;
-
-type ClassLog = {
-  id: number; classDate: string; timeStarted: string; timeEnded: string;
-  timeTaken: string; whatTaught: string; homework: string; createdAt: string;
-};
+import { useAppAuth } from "@/hooks/use-app-auth";
+import { getClassLogs, type ClassLog } from "@/lib/db/class-logs";
 
 export default function StudentClassLogs() {
   const [logs, setLogs] = useState<ClassLog[]>([]);
+  const { user } = useAppAuth();
 
   useEffect(() => {
-    fetch(`${BASE}api/class-logs`, { credentials: "include" })
-      .then(r => r.json()).then(setLogs).catch(() => {});
-  }, []);
+    if (user?.studentId) {
+      getClassLogs(user.studentId).then(setLogs).catch(() => {});
+    }
+  }, [user?.studentId]);
 
   return (
     <AppLayout>
@@ -33,7 +30,7 @@ export default function StudentClassLogs() {
             <p className="text-sm mt-1">Your teacher will add logs after each session.</p>
           </div>
         ) : (
-          [...logs].reverse().map(log => (
+          logs.map(log => (
             <Card key={log.id} className="bg-card border-border/50 hover:border-primary/20 transition-colors">
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center gap-3 flex-wrap">

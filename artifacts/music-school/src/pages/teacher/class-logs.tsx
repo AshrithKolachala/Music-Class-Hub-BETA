@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { ClipboardList, Plus, Trash2, ChevronDown } from "lucide-react";
+import { ClipboardList, Plus, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,15 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-
-const BASE = import.meta.env.BASE_URL;
-
-type Student = { id: number; studentId: string; name: string; instrument: string };
-type ClassLog = {
-  id: number; studentId: number; studentName: string; studentCode: string;
-  classDate: string; timeStarted: string; timeEnded: string; timeTaken: string;
-  whatTaught: string; homework: string; createdAt: string;
-};
+import { getClassLogs, createClassLog, deleteClassLog, type ClassLog } from "@/lib/db/class-logs";
+import { getStudents, type Student } from "@/lib/db/students";
 
 export default function TeacherClassLogs() {
   const [logs, setLogs] = useState<ClassLog[]>([]);
@@ -31,16 +24,13 @@ export default function TeacherClassLogs() {
   const form = useForm({ defaultValues: { classDate: "", timeStarted: "", timeEnded: "", timeTaken: "", whatTaught: "", homework: "" } });
 
   const fetchLogs = async () => {
-    const url = filterStudentId && filterStudentId !== "all"
-      ? `${BASE}api/class-logs?studentId=${filterStudentId}`
-      : `${BASE}api/class-logs`;
-    const res = await fetch(url, { credentials: "include" });
-    if (res.ok) setLogs(await res.json());
+    const data = await getClassLogs(filterStudentId !== "all" ? filterStudentId : undefined);
+    setLogs(data);
   };
 
   const fetchStudents = async () => {
-    const res = await fetch(`${BASE}api/students`, { credentials: "include" });
-    if (res.ok) setStudents(await res.json());
+    const data = await getStudents();
+    setStudents(data);
   };
 
   useEffect(() => { fetchStudents(); }, []);
@@ -48,25 +38,33 @@ export default function TeacherClassLogs() {
 
   const onSubmit = async (data: any) => {
     if (!selectedStudentId) { toast({ title: "Please select a student", variant: "destructive" }); return; }
-    const res = await fetch(`${BASE}api/class-logs`, {
-      method: "POST", credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, studentId: selectedStudentId }),
-    });
-    if (res.ok) {
+    const student = students.find(s => s.id === selectedStudentId);
+    if (!student) return;
+    try {
+      await createClassLog({
+        studentId: selectedStudentId,
+        studentName: student.name,
+        studentCode: student.studentId,
+        classDate: data.classDate,
+        timeStarted: data.timeStarted,
+        timeEnded: data.timeEnded,
+        timeTaken: data.timeTaken,
+        whatTaught: data.whatTaught,
+        homework: data.homework,
+      });
       toast({ title: "Class log added" });
       setIsOpen(false);
       form.reset();
       setSelectedStudentId("");
       fetchLogs();
-    } else {
+    } catch {
       toast({ title: "Error adding log", variant: "destructive" });
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Delete this log?")) return;
-    await fetch(`${BASE}api/class-logs/${id}`, { method: "DELETE", credentials: "include" });
+    await deleteClassLog(id);
     fetchLogs();
   };
 
@@ -82,7 +80,6 @@ export default function TeacherClassLogs() {
         </Button>
       </div>
 
-      {/* Filter */}
       <div className="mb-6 flex items-center gap-3">
         <Label className="text-sm text-muted-foreground shrink-0">Filter by student:</Label>
         <Select value={filterStudentId} onValueChange={setFilterStudentId}>
@@ -91,7 +88,7 @@ export default function TeacherClassLogs() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Students</SelectItem>
-            {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+            {students.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -103,7 +100,7 @@ export default function TeacherClassLogs() {
             <p className="text-lg font-medium">No class logs yet</p>
           </div>
         ) : (
-          [...logs].reverse().map(log => (
+          logs.map(log => (
             <Card key={log.id} className="bg-card border-border/50 hover:border-primary/20 transition-colors">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between gap-4">
@@ -152,7 +149,7 @@ export default function TeacherClassLogs() {
                   <SelectValue placeholder="Select student..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {students.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name} ({s.studentId})</SelectItem>)}
+                  {students.map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.studentId})</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

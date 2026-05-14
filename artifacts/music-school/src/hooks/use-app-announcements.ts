@@ -1,27 +1,31 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
-  useListAnnouncements,
-  useCreateAnnouncement,
-  useDeleteAnnouncement,
-  getListAnnouncementsQueryKey
-} from "@workspace/api-client-react";
+  getAnnouncements,
+  createAnnouncement,
+  deleteAnnouncement,
+  type Announcement,
+} from "@/lib/db/announcements";
+
+const ANNOUNCEMENTS_KEY = ["announcements"];
 
 export function useAppAnnouncements() {
   const queryClient = useQueryClient();
-  const queryKey = getListAnnouncementsQueryKey();
 
-  const { data: announcements = [], isLoading } = useListAnnouncements();
-
-  const createMutation = useCreateAnnouncement({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const { data: announcements = [], isLoading } = useQuery<Announcement[]>({
+    queryKey: ANNOUNCEMENTS_KEY,
+    queryFn: getAnnouncements,
   });
 
-  const deleteMutation = useDeleteAnnouncement({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const createMutation = useMutation({
+    mutationFn: async ({ data }: { data: { title: string; content: string; isPinned: boolean } }) =>
+      createAnnouncement(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ANNOUNCEMENTS_KEY }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ announcementId }: { announcementId: string }) =>
+      deleteAnnouncement(announcementId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ANNOUNCEMENTS_KEY }),
   });
 
   return {

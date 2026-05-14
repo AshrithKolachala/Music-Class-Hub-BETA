@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +6,7 @@ import * as z from "zod";
 import { CalendarDays, Plus, MoreVertical, Video, Trash2, Edit2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { useAppClasses } from "@/hooks/use-app-classes";
+import { useAppStudents } from "@/hooks/use-app-students";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -16,11 +17,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
-import { ClassStatus } from "@workspace/api-client-react";
-
-const BASE = import.meta.env.BASE_URL;
-
-type Student = { id: number; studentId: string; name: string; instrument: string };
 
 const classSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -32,17 +28,12 @@ const classSchema = z.object({
 
 export default function TeacherClasses() {
   const { classes, createClass, deleteClass, updateClass } = useAppClasses();
+  const { students } = useAppStudents();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("all");
   const [recurringType, setRecurringType] = useState<string>("none");
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetch(`${BASE}api/students`, { credentials: "include" })
-      .then(r => r.json()).then(d => setStudents(Array.isArray(d) ? d : [])).catch(() => {});
-  }, []);
 
   const form = useForm<z.infer<typeof classSchema>>({
     resolver: zodResolver(classSchema),
@@ -55,7 +46,7 @@ export default function TeacherClasses() {
       const payload = {
         ...data,
         scheduledAt: isoDate,
-        studentId: selectedStudentId && selectedStudentId !== "all" ? parseInt(selectedStudentId) : null,
+        studentId: selectedStudentId && selectedStudentId !== "all" ? selectedStudentId : null,
         recurringType,
       };
       if (editingId) {
@@ -90,12 +81,12 @@ export default function TeacherClasses() {
     setIsDialogOpen(true);
   };
 
-  const handleStatusChange = async (id: number, status: ClassStatus) => {
-    await updateClass({ classId: id, data: { status } });
+  const handleStatusChange = async (id: string, status: string) => {
+    await updateClass({ classId: id, data: { status: status as any } });
     toast({ title: `Status updated to ${status}` });
   };
 
-  const getStudentName = (studentId: number | null) => {
+  const getStudentName = (studentId: string | null) => {
     if (!studentId) return null;
     const s = students.find(s => s.id === studentId);
     return s ? s.name : null;
@@ -108,7 +99,7 @@ export default function TeacherClasses() {
           <h1 className="text-3xl font-display font-bold">Class Schedule</h1>
           <p className="text-muted-foreground mt-2">Manage your upcoming lessons</p>
         </div>
-        
+
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) {
@@ -143,7 +134,7 @@ export default function TeacherClasses() {
                   <SelectContent>
                     <SelectItem value="all">All Students</SelectItem>
                     {students.map(s => (
-                      <SelectItem key={s.id} value={String(s.id)}>{s.name} ({s.studentId})</SelectItem>
+                      <SelectItem key={s.id} value={s.id}>{s.name} ({s.studentId})</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -164,9 +155,7 @@ export default function TeacherClasses() {
               <div className="space-y-2">
                 <Label>Recurring</Label>
                 <Select value={recurringType} onValueChange={setRecurringType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Does not repeat</SelectItem>
                     <SelectItem value="daily">Daily</SelectItem>
@@ -226,14 +215,14 @@ export default function TeacherClasses() {
                     <p className="text-sm text-muted-foreground font-medium mt-1">{c.topic}</p>
                     {c.description && <p className="text-sm text-muted-foreground mt-2 line-clamp-1">{c.description}</p>}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {(c as any).studentId && (
+                      {c.studentId && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          {getStudentName((c as any).studentId) || "Student only"}
+                          {getStudentName(c.studentId) || "Student only"}
                         </span>
                       )}
-                      {(c as any).recurringType && (c as any).recurringType !== "none" && (
+                      {c.recurringType && c.recurringType !== "none" && (
                         <span className="text-xs bg-secondary text-muted-foreground px-2 py-0.5 rounded-full capitalize">
-                          {(c as any).recurringType}
+                          {c.recurringType}
                         </span>
                       )}
                     </div>
@@ -241,9 +230,9 @@ export default function TeacherClasses() {
 
                   <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                     <div className="mr-auto md:mr-4">
-                      <Select 
-                        value={c.status} 
-                        onValueChange={(val) => handleStatusChange(c.id, val as ClassStatus)}
+                      <Select
+                        value={c.status}
+                        onValueChange={(val) => handleStatusChange(c.id, val)}
                       >
                         <SelectTrigger className="w-[130px] h-9 text-xs">
                           <SelectValue />

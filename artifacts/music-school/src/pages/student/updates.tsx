@@ -3,18 +3,18 @@ import { Megaphone } from "lucide-react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
-
-const BASE = import.meta.env.BASE_URL;
-
-type Update = { id: number; title: string; content: string; createdAt: string };
+import { useAppAuth } from "@/hooks/use-app-auth";
+import { getUpdates, type Update } from "@/lib/db/updates";
 
 export default function StudentUpdates() {
   const [updates, setUpdates] = useState<Update[]>([]);
+  const { user } = useAppAuth();
 
   useEffect(() => {
-    fetch(`${BASE}api/updates`, { credentials: "include" })
-      .then(r => r.json()).then(setUpdates).catch(() => {});
-  }, []);
+    if (user?.studentId) {
+      getUpdates(user.studentId).then(setUpdates).catch(() => {});
+    }
+  }, [user?.studentId]);
 
   return (
     <AppLayout>
@@ -31,7 +31,7 @@ export default function StudentUpdates() {
             <p className="text-sm mt-1">Your teacher will post personal updates here.</p>
           </div>
         ) : (
-          [...updates].reverse().map(u => (
+          updates.map(u => (
             <Card key={u.id} className="bg-card border-border/50 hover:border-primary/20 transition-colors">
               <CardContent className="p-5">
                 <h3 className="font-bold text-foreground text-lg mb-2">{u.title}</h3>

@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,7 +53,7 @@ function ProtectedRoute({ component: Component, allowedRole }: { component: any,
   return <Component />;
 }
 
-function Router() {
+function AppRouter() {
   const { isAuthenticated, user, isLoadingUser } = useAppAuth();
 
   if (isLoadingUser) {
@@ -65,12 +66,10 @@ function Router() {
 
   return (
     <Switch>
-      {/* Public / Auth */}
       <Route path="/">
         {isAuthenticated ? <Redirect to={`/${user?.role}`} /> : <Login />}
       </Route>
 
-      {/* Teacher Routes */}
       <Route path="/teacher">
         <ProtectedRoute component={TeacherDashboard} allowedRole="teacher" />
       </Route>
@@ -90,7 +89,6 @@ function Router() {
         <ProtectedRoute component={TeacherUpdates} allowedRole="teacher" />
       </Route>
 
-      {/* Student Routes */}
       <Route path="/student">
         <ProtectedRoute component={StudentDashboard} allowedRole="student" />
       </Route>
@@ -110,7 +108,6 @@ function Router() {
         <ProtectedRoute component={StudentUpdates} allowedRole="student" />
       </Route>
 
-      {/* Shared Routes */}
       <Route path="/call/:id">
         <ProtectedRoute component={Call} />
       </Route>
@@ -124,8 +121,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
+        <WouterRouter hook={useHashLocation}>
+          <AppRouter />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

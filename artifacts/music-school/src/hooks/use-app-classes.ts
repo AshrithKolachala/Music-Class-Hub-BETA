@@ -1,34 +1,45 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import {
-  useListClasses,
-  useCreateClass,
-  useUpdateClass,
-  useDeleteClass,
-  getListClassesQueryKey
-} from "@workspace/api-client-react";
+  getClasses,
+  createClass,
+  updateClass,
+  deleteClass,
+  type ClassRecord,
+} from "@/lib/db/classes";
+import { useAppAuth } from "@/hooks/use-app-auth";
+
+const CLASSES_KEY = ["classes"];
 
 export function useAppClasses() {
   const queryClient = useQueryClient();
-  const queryKey = getListClassesQueryKey();
+  const { user } = useAppAuth();
 
-  const { data: classes = [], isLoading } = useListClasses();
-
-  const createMutation = useCreateClass({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const { data: allClasses = [], isLoading } = useQuery<ClassRecord[]>({
+    queryKey: CLASSES_KEY,
+    queryFn: getClasses,
   });
 
-  const updateMutation = useUpdateClass({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const classes =
+    user?.role === "student"
+      ? allClasses.filter(
+          (c) => c.studentId === null || c.studentId === user.studentId
+        )
+      : allClasses;
+
+  const createMutation = useMutation({
+    mutationFn: async ({ data }: { data: any }) => createClass(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLASSES_KEY }),
   });
 
-  const deleteMutation = useDeleteClass({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey })
-    }
+  const updateMutation = useMutation({
+    mutationFn: async ({ classId, data }: { classId: string; data: any }) =>
+      updateClass(classId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLASSES_KEY }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async ({ classId }: { classId: string }) => deleteClass(classId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: CLASSES_KEY }),
   });
 
   return {

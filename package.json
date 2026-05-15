@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
+  "homepage": "https://learn.sangeetavarshini.com",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
@@ -17,9 +18,7 @@
     "prettier": "^3.8.1"
   },
   "dependencies": {
-    // Add runtime dependencies here, for example:
-    // "react": "^18.3.1",
-    // "react-dom": "^18.3.1"
+    // Add runtime dependencies here
   },
   "engines": {
     "node": ">=18",

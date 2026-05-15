@@ -17,9 +17,7 @@
     "typescript": "~5.9.2",
     "prettier": "^3.8.1"
   },
-  "dependencies": {
-    // Add runtime dependencies here
-  },
+  "dependencies": {},
   "engines": {
     "node": ">=18",
     "pnpm": ">=8"

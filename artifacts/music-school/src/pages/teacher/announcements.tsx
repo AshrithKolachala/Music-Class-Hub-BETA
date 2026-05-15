@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { getStudents, type Student } from "@/lib/db/students";
+import { createNotification } from "@/lib/db/notifications";
 
 const announcementSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -24,7 +26,10 @@ const announcementSchema = z.object({
 export default function TeacherAnnouncements() {
   const { announcements, createAnnouncement, deleteAnnouncement } = useAppAnnouncements();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [students, setStudents] = useState<Student[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => { getStudents().then(setStudents).catch(() => {}); }, []);
 
   const form = useForm<z.infer<typeof announcementSchema>>({
     resolver: zodResolver(announcementSchema),
@@ -34,6 +39,19 @@ export default function TeacherAnnouncements() {
   const onSubmit = async (data: z.infer<typeof announcementSchema>) => {
     try {
       await createAnnouncement({ data });
+
+      // Notify every student
+      await Promise.all(
+        students.map(s =>
+          createNotification({
+            studentId: s.id,
+            type: "announcement",
+            title: `Announcement: ${data.title}`,
+            message: data.content,
+          })
+        )
+      );
+
       toast({ title: "Announcement posted successfully" });
       setIsDialogOpen(false);
       form.reset();

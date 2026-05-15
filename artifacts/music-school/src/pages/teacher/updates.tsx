@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { getUpdates, createUpdate, deleteUpdate, type Update } from "@/lib/db/updates";
 import { getStudents, type Student } from "@/lib/db/students";
+import { createNotification } from "@/lib/db/notifications";
 
 export default function TeacherUpdates() {
   const [updates, setUpdates] = useState<Update[]>([]);
@@ -42,6 +43,14 @@ export default function TeacherUpdates() {
         title: data.title,
         content: data.content,
       });
+
+      await createNotification({
+        studentId: selectedStudentId,
+        type: "update",
+        title: data.title,
+        message: data.content,
+      });
+
       toast({ title: "Update sent" });
       setIsOpen(false);
       form.reset();

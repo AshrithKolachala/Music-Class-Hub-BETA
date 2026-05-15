@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
+import { createNotification } from "@/lib/db/notifications";
 
 const classSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -43,19 +44,48 @@ export default function TeacherClasses() {
   const onSubmit = async (data: z.infer<typeof classSchema>) => {
     try {
       const isoDate = new Date(data.scheduledAt).toISOString();
+      const specificStudentId = selectedStudentId && selectedStudentId !== "all" ? selectedStudentId : null;
       const payload = {
         ...data,
         scheduledAt: isoDate,
-        studentId: selectedStudentId && selectedStudentId !== "all" ? selectedStudentId : null,
+        studentId: specificStudentId,
         recurringType,
       };
+
       if (editingId) {
         await updateClass({ classId: editingId, data: payload as any });
         toast({ title: "Class updated successfully" });
       } else {
         await createClass({ data: payload as any });
+
+        const dateLabel = format(new Date(isoDate), "MMM d, yyyy 'at' h:mm a");
+        const notifMessage = `${data.topic} — ${data.durationMinutes} mins on ${dateLabel}${data.description ? `. ${data.description}` : ""}`;
+
+        if (specificStudentId) {
+          // Notify specific student
+          await createNotification({
+            studentId: specificStudentId,
+            type: "class",
+            title: `New class scheduled: ${data.title}`,
+            message: notifMessage,
+          });
+        } else {
+          // Notify all students
+          await Promise.all(
+            students.map(s =>
+              createNotification({
+                studentId: s.id,
+                type: "class",
+                title: `New class scheduled: ${data.title}`,
+                message: notifMessage,
+              })
+            )
+          );
+        }
+
         toast({ title: "Class scheduled successfully" });
       }
+
       setIsDialogOpen(false);
       form.reset();
       setEditingId(null);

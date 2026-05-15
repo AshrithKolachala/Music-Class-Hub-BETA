@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAppAuth } from "@/hooks/use-app-auth";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/ui/notification-bell";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -84,9 +85,12 @@ export function AppLayout({ children }: AppLayoutProps) {
         </nav>
 
         <div className="p-4 border-t border-border/50">
-          <div className="mb-4 px-4">
-            <p className="text-sm font-medium text-foreground">{user?.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+          <div className="mb-4 px-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">{user?.name}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+            </div>
+            {role === "student" && <NotificationBell />}
           </div>
           <Button 
             variant="ghost" 

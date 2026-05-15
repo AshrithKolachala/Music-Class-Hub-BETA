@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import { getClassLogs, createClassLog, deleteClassLog, type ClassLog } from "@/lib/db/class-logs";
 import { getStudents, type Student } from "@/lib/db/students";
+import { createNotification } from "@/lib/db/notifications";
 
 export default function TeacherClassLogs() {
   const [logs, setLogs] = useState<ClassLog[]>([]);
@@ -52,6 +52,14 @@ export default function TeacherClassLogs() {
         whatTaught: data.whatTaught,
         homework: data.homework,
       });
+
+      await createNotification({
+        studentId: selectedStudentId,
+        type: "class_log",
+        title: `Class log added — ${data.classDate}`,
+        message: `What was covered: ${data.whatTaught}${data.homework ? `. Homework: ${data.homework}` : ""}`,
+      });
+
       toast({ title: "Class log added" });
       setIsOpen(false);
       form.reset();

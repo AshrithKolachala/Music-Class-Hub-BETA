@@ -106,7 +106,7 @@ export default function Login() {
                   </Label>
                   <Input 
                     id="userId" 
-                    placeholder={role === "student" ? "e.g. STU-001" : "e.g. TEACHER-001"} 
+                    placeholder={role === "student" ? "e.g. STU-XXX" : "e.g. TEACHER-001"} 
                     className="bg-background/50 border-border focus:border-primary focus:ring-primary/20 h-12"
                     {...register("userId")}
                   />

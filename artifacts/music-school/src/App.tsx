@@ -13,11 +13,13 @@ import TeacherStudents from "@/pages/teacher/students";
 import TeacherAnnouncements from "@/pages/teacher/announcements";
 import TeacherClassLogs from "@/pages/teacher/class-logs";
 import TeacherUpdates from "@/pages/teacher/updates";
+import TeacherRecordings from "@/pages/teacher/recordings";
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentClasses from "@/pages/student/classes";
 import StudentAccount from "@/pages/student/account";
 import StudentClassLogs from "@/pages/student/class-logs";
 import StudentUpdates from "@/pages/student/updates";
+import StudentRecordings from "@/pages/student/recordings";
 import Call from "@/pages/shared/call";
 
 import { useAppAuth } from "@/hooks/use-app-auth";
@@ -88,6 +90,9 @@ function AppRouter() {
       <Route path="/teacher/updates">
         <ProtectedRoute component={TeacherUpdates} allowedRole="teacher" />
       </Route>
+      <Route path="/teacher/recordings">
+        <ProtectedRoute component={TeacherRecordings} allowedRole="teacher" />
+      </Route>
 
       <Route path="/student">
         <ProtectedRoute component={StudentDashboard} allowedRole="student" />
@@ -106,6 +111,9 @@ function AppRouter() {
       </Route>
       <Route path="/student/updates">
         <ProtectedRoute component={StudentUpdates} allowedRole="student" />
+      </Route>
+      <Route path="/student/recordings">
+        <ProtectedRoute component={StudentRecordings} allowedRole="student" />
       </Route>
 
       <Route path="/call/:id">

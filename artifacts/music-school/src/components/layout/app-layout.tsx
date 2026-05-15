@@ -9,7 +9,8 @@ import {
   LogOut,
   KeyRound,
   ClipboardList,
-  Megaphone
+  Megaphone,
+  Film,
 } from "lucide-react";
 import { useAppAuth } from "@/hooks/use-app-auth";
 import { Button } from "@/components/ui/button";
@@ -34,12 +35,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     { name: "Class Logs", href: `${basePath}/class-logs`, icon: ClipboardList },
     { name: "Updates", href: `${basePath}/updates`, icon: Megaphone },
     { name: "Announcements", href: `${basePath}/announcements`, icon: Bell },
+    { name: "Recordings", href: `${basePath}/recordings`, icon: Film },
   ] : [
     { name: "Dashboard", href: basePath, icon: LayoutDashboard },
     { name: "My Classes", href: `${basePath}/classes`, icon: CalendarDays },
     { name: "Class Logs", href: `${basePath}/class-logs`, icon: ClipboardList },
     { name: "Updates", href: `${basePath}/updates`, icon: Megaphone },
     { name: "Announcements", href: `${basePath}/announcements`, icon: Bell },
+    { name: "Recordings", href: `${basePath}/recordings`, icon: Film },
     { name: "My Account", href: `${basePath}/account`, icon: KeyRound },
   ];
 

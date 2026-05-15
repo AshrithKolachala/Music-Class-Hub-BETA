@@ -23,21 +23,21 @@ export type Update = {
 export async function getUpdates(filterStudentId?: string): Promise<Update[]> {
   let q;
   if (filterStudentId && filterStudentId !== "all") {
+    // Only filter by studentId — sort client-side to avoid needing a composite index
     q = query(
       collection(db, "updates"),
-      where("studentId", "==", filterStudentId),
-      orderBy("createdAt", "desc")
+      where("studentId", "==", filterStudentId)
     );
   } else {
     q = query(collection(db, "updates"), orderBy("createdAt", "desc"));
   }
   const snap = await getDocs(q);
-  return snap.docs.map((d) => {
+  const updates = snap.docs.map((d) => {
     const data = d.data();
     const createdAt =
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate().toISOString()
-        : data.createdAt;
+        : data.createdAt ?? "";
     return {
       id: d.id,
       studentId: data.studentId,
@@ -47,6 +47,8 @@ export async function getUpdates(filterStudentId?: string): Promise<Update[]> {
       createdAt,
     };
   });
+  // Sort client-side newest first
+  return updates.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function createUpdate(data: {

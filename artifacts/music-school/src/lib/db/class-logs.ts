@@ -28,21 +28,21 @@ export type ClassLog = {
 export async function getClassLogs(filterStudentId?: string): Promise<ClassLog[]> {
   let q;
   if (filterStudentId && filterStudentId !== "all") {
+    // Only filter by studentId — sort client-side to avoid needing a composite index
     q = query(
       collection(db, "classLogs"),
-      where("studentId", "==", filterStudentId),
-      orderBy("createdAt", "desc")
+      where("studentId", "==", filterStudentId)
     );
   } else {
     q = query(collection(db, "classLogs"), orderBy("createdAt", "desc"));
   }
   const snap = await getDocs(q);
-  return snap.docs.map((d) => {
+  const logs = snap.docs.map((d) => {
     const data = d.data();
     const createdAt =
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate().toISOString()
-        : data.createdAt;
+        : data.createdAt ?? "";
     return {
       id: d.id,
       studentId: data.studentId,
@@ -57,6 +57,8 @@ export async function getClassLogs(filterStudentId?: string): Promise<ClassLog[]
       createdAt,
     };
   });
+  // Sort client-side newest first
+  return logs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function createClassLog(data: {

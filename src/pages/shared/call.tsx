@@ -64,6 +64,14 @@ export default function Call() {
   };
 
   const startRecording = async () => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      toast({
+        title: "Screen recording not available",
+        description: "This device or browser doesn't support screen recording. Try on a desktop browser.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
@@ -170,9 +178,25 @@ export default function Call() {
         setDisplayDuration((d) => d + 1);
       }, 1000);
     } catch (err: any) {
-      if (err?.name !== "NotAllowedError") {
+      const name = err?.name || "";
+      const message = err?.message || "";
+      console.error("Recording start error:", name, message);
+      if (name === "NotAllowedError") {
         toast({
-          title: "Could not start recording.",
+          title: "Recording permission denied",
+          description: "You declined the screen sharing request.",
+          variant: "destructive",
+        });
+      } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+        toast({
+          title: "No screen available",
+          description: "No screen sharing source was found.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Could not start recording",
+          description: message || "Check your browser permissions.",
           variant: "destructive",
         });
       }

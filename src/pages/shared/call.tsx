@@ -64,6 +64,14 @@ export default function Call() {
   };
 
   const startRecording = async () => {
+    if (window.self !== window.top) {
+      toast({
+        title: "Recording unavailable",
+        description: "Screen recording is blocked by the domain mask. Visit the direct site (ashrithkolachala.github.io/Music-Class-Hub-BETA/) to use this feature.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast({
         title: "Screen recording not available",

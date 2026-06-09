@@ -97,6 +97,18 @@ export default function Call() {
         const timestamp = Date.now();
         const filename = `${classId}-${timestamp}.webm`;
 
+        if (blob.size === 0) {
+          setRecordingState("idle");
+          setUploadStatus("");
+          toast({
+            title: "Recording failed — no data captured.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log("Recording ready:", blob.size, "bytes, type:", blob.type);
+
         try {
           setUploadStatus("Uploading to storage…");
           const url = await uploadRecordingBlob(blob, filename);
@@ -123,15 +135,23 @@ export default function Call() {
             durationRef.current = 0;
             setUploadStatus("");
           }, 3000);
-        } catch (err) {
+        } catch (err: any) {
           console.error("Upload error:", err);
+          const code = err?.code || "";
+          const message = err?.message || "";
           setRecordingState("idle");
           setUploadStatus("");
           toast({
-            title: "Upload failed. Check Firebase Storage rules.",
+            title: `Upload failed (${code || "error"})`,
+            description: message || "Check Firebase Storage rules and console for details.",
             variant: "destructive",
           });
         }
+      };
+
+      recorder.onerror = (e) => {
+        console.error("MediaRecorder error:", e);
+        toast({ title: "Recording error occurred", variant: "destructive" });
       };
 
       // If user stops screen share from browser UI
